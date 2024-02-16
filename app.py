@@ -24,8 +24,6 @@ oauth.register('lichess', client_kwargs={"code_challenge_method": "S256"})
 @app.route('/')
 def login():
     redirect_uri = url_for("authorize", _external=True)
-    """
-    """
     return oauth.lichess.authorize_redirect(redirect_uri)
 
 @app.route('/authorize')
