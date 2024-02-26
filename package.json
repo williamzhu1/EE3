@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "https-browserify": "^1.0.0",
+    "stream-http": "^3.2.0",
+    "util": "^0.12.5"
+  }
+}
