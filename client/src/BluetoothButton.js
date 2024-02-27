@@ -8,15 +8,21 @@ export const BluetoothButton = () => {
   };
   const requestBluetoothDevice = async () => {
     let options = {};
-    options.acceptAllDevices = true;
+    options.optionalServices = [0x180D];
+    //options.acceptAllDevices = true;
+    options.filters = [{services: [0x00EE]}];
 
     try {
       log('Requesting Bluetooth Device...');
       const device = await navigator.bluetooth.requestDevice(options);
-      device.gatt.connect();
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(0x180D);
+      let characteristics;
+      characteristics = await service.getCharacteristics(0x2A38);
       log('> Name:             ' + device.name);
       log('> Id:               ' + device.id);
       log('> Connected:        ' + device.gatt.connected);
+      log('> Characteristics     ' + characteristics);
     } catch (error) {
       log('Argh! ' + error);
     }
