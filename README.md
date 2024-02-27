@@ -1,6 +1,6 @@
 ## DOTENV
 
-make a `.env` file with the following contents:
+make a `.env` file with the following contents inside server:
 
 ```
 LICHESS_CLIENT_ID="lichess-oauth-flask"
