@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { BluetoothButton, characteristic } from './BluetoothButton'
 
 export const MakeMove = ({ gameId, isUsersTurn }) => {
   const [move, setMove] = useState('')
