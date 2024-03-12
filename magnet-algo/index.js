@@ -1,4 +1,15 @@
-const { Chess } = require("chess.js");
+const { Chess } = require('chess.js');
+
+const DIRECTIONS = {
+  N: 'NORTH',
+  S: 'SOUTH',
+  W: 'WEST',
+  E: 'EAST',
+  NW: 'NORTHWEST',
+  NE: 'NORTHEAST',
+  SW: 'SOUTHWEST',
+  SE: 'SOUTHEAST'
+}
 
 class Magnet {
   constructor() {
@@ -6,12 +17,18 @@ class Magnet {
       x: 0,
       y: 0,
     };
-    this._instructions = ["MAGNET OFF"];
+    this._instructions = ['MAGNET OFF'];
     this._isOn = false;
+    this._chess = new Chess();
   }
 
   get position() {
     return this._position;
+  }
+
+  set position(pos) {
+    this._position.x = pos.x;
+    this._position.y = pos.y
   }
 
   get instructions() {
@@ -19,48 +36,168 @@ class Magnet {
   }
 
   resetInstructions() {
-    this._instructions = ["MAGNET OFF"];
+    this._instructions = ['MAGNET OFF'];
+  }
+
+  movePiece(notation) {
+    if (notation === 'O-O' || notation === 'O-O-O') {
+      return this.castle(notation);
+    }
+    const fromRaw = `${notation[0]}${notation[1]}`;
+    const toRaw = `${notation[2]}${notation[3]}`;
+    const from = Magnet.convertChessNotationToXY(fromRaw);
+    const to = Magnet.convertChessNotationToXY(toRaw);
+    const piece = this._chess.get(fromRaw);
+    this._chess.move({ from: fromRaw, to: toRaw });
+
+    if (piece.type === 'n') {
+      return this.moveKnight(from, to);
+    }
+
+    this.moveTo(from);
+    this.turnOn();
+
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+
+    if (Math.abs(dx) === Math.abs(dy)) {
+      const direction = (dx > 0 && dy > 0) ? DIRECTIONS.NE : (dx > 0 && dy < 0) ? DIRECTIONS.SE : (dx < 0 && dy > 0) ? DIRECTIONS.NW : DIRECTIONS.SW;
+      this._instructions.push(`${direction} ${Math.abs(dx)}`);
+    } else {
+      if (dx !== 0) {
+        const direction = dx > 0 ? DIRECTIONS.E : DIRECTIONS.W;
+        this._instructions.push(`${direction} ${Math.abs(dx)}`);
+      } else {
+        const direction = dy > 0 ? DIRECTIONS.N : DIRECTIONS.S;
+        this._instructions.push(`${direction} ${Math.abs(dy)}`);
+      }
+    }
+
+    this.turnOff();
+
+    this._position.x = to.x;
+    this._position.y = to.y;
+  }
+
+  moveKnight(from, to) {
+    this.moveTo(from);
+    this.turnOn();
+
+    let dx = to.x - from.x;
+    let dy = to.y - from.y;
+
+    const offsetDirection = (
+                              (dx > 0 && dy > 0) ? DIRECTIONS.NE :
+                              (dx > 0 && dy < 0) ? DIRECTIONS.SE :
+                              (dx < 0 && dy > 0) ? DIRECTIONS.NW :
+                              DIRECTIONS.SW
+                            );
+
+    this._instructions.push(`${offsetDirection} 0.5`);
+
+    dx = (dx > 0) ? dx - 0.5 : dx + 0.5;
+    dy = (dy > 0) ? dy - 0.5 : dy + 0.5;
+
+    const directionX = dx > 0 ? DIRECTIONS.E : DIRECTIONS.W;
+    const directionY = dy > 0 ? DIRECTIONS.N : DIRECTIONS.S;
+
+    if (Math.abs(dx) < 1) {
+      this._instructions.push(`${directionY} 1`);
+    } else {
+      this._instructions.push(`${directionX} 1`);
+    }
+    this._instructions.push(`${offsetDirection} 0.5`);
+
+    this.turnOff();
+
+    this._position.x = to.x;
+    this._position.y = to.y;
+  }
+
+  castle(notation) {
+    const color = this._chess.turn();
+    this._chess.move(notation);
+    const whiteRookPos = notation === 'O-O' ? { x: 7, y: 0 } : { x: 0, y: 0 };
+    const blackRookPos = notation === 'O-O' ? { x: 7, y: 7 } : { x: 0, y: 7 };
+
+    if (color === 'w') {
+      this.moveTo(whiteRookPos);
+      this.turnOn();
+      if (notation === 'O-O') {
+        this._instructions.push(`${DIRECTIONS.W} 2`);
+        this.turnOff();
+        this._instructions.push(`${DIRECTIONS.W} 1`);
+        this.turnOn();
+        this._instructions.push(`${DIRECTIONS.NE} 0.5`);
+        this._instructions.push(`${DIRECTIONS.E} 1`);
+        this._instructions.push(`${DIRECTIONS.SE} 0.5`);
+        this.turnOff();
+      } else {
+        this._instructions.push(`${DIRECTIONS.E} 3`);
+        this.turnOff();
+        this._instructions.push(`${DIRECTIONS.E} 1`);
+        this.turnOn();
+        this._instructions.push(`${DIRECTIONS.NW} 0.5`);
+        this._instructions.push(`${DIRECTIONS.W} 1`);
+        this._instructions.push(`${DIRECTIONS.SW} 0.5`);
+        this.turnOff();
+      }
+    } else {
+      this.moveTo(blackRookPos);
+      this.turnOn();
+      if (notation === 'O-O') {
+        this._instructions.push(`${DIRECTIONS.W} 2`);
+        this.turnOff();
+        this._instructions.push(`${DIRECTIONS.W} 1`);
+        this.turnOn();
+        this._instructions.push(`${DIRECTIONS.SE} 0.5`);
+        this._instructions.push(`${DIRECTIONS.E} 1`);
+        this._instructions.push(`${DIRECTIONS.NE} 0.5`);
+        this.turnOff();
+      } else {
+        this._instructions.push(`${DIRECTIONS.E} 3`);
+        this.turnOff();
+        this._instructions.push(`${DIRECTIONS.E} 1`);
+        this.turnOn();
+        this._instructions.push(`${DIRECTIONS.SW} 0.5`);
+        this._instructions.push(`${DIRECTIONS.W} 1`);
+        this._instructions.push(`${DIRECTIONS.NW} 0.5`);
+        this.turnOff();
+      }
+    }
   }
 
   moveTo(position) {
-    if (this.position.x === position.x && this.position.y === position.y) return;
+    const dx = position.x - this._position.x;
+    const dy = position.y - this._position.y;
 
-    let dx = position.x - this.position.x;
-    let dy = position.y - this.position.y;
+    const directionX = dx > 0 ? DIRECTIONS.E : DIRECTIONS.W;
+    const directionY = dy > 0 ? DIRECTIONS.N : DIRECTIONS.S;
 
-    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
-      dx = dx > 0.5 ? 0.5 : dx < -0.5 ? -0.5 : 0;
-      dy = dy > 0.5 ? 0.5 : dy < -0.5 ? -0.5 : 0;
-    } else {
-      dx = dx !== 0 ? dx : 0;
-      dy = dy !== 0 ? dy : 0;
-    }
+    this._instructions.push(`${directionX} ${Math.abs(dx)}`);
+    this._instructions.push(`${directionY} ${Math.abs(dy)}`);
 
-    const directionX = dx > 0 ? "EAST" : dx < 0 ? "WEST" : "";
-    const directionY = dy > 0 ? "NORTH" : dy < 0 ? "SOUTH" : "";
+    this._position.x = position.x;
+    this._position.y = position.y;
+  }
 
-    if (dx !== 0) {
-      this._position.x += dx;
-      this._instructions.push(`${directionX} ${Math.abs(dx)}`);
-    }
-    if (dy !== 0) {
-      this._position.y += dy;
-      this._instructions.push(`${directionY} ${Math.abs(dy)}`);
-    }
-
-    this.moveTo(position);
+  static convertChessNotationToXY(notation) {
+    return {
+      x: notation.charCodeAt(0) - 'a'.charCodeAt(0),
+      y: notation.charAt(1) - '0' - 1,
+    };
   }
 
   turnOn() {
-    this._instructions.push("MAGNET ON");
+    this._instructions.push('MAGNET ON');
   }
 
   turnOff() {
-    this._instructions.push("MAGNET OFF");
+    this._instructions.push('MAGNET OFF');
   }
 
   goHome() {
-    this._instructions.push("HOME");
+    this._instructions.push('HOME');
     this._position = {
       x: 0,
       y: 0,
@@ -68,23 +205,12 @@ class Magnet {
   }
 }
 
-const convertChessNotationToXY = (notation) => {
-  return {
-    x: notation.charCodeAt(0) - "a".charCodeAt(0),
-    y: notation.charAt(1) - "0" - 1,
-  };
-};
-
 // DEMO
 const magnet = new Magnet();
-const moves = ["b1c3", "e7e5", "g1h3", "b8a6"];
+const moves = ['e2e4', 'e7e5', 'f1c4', 'f8c5', 'g1h3', 'g8f6', 'O-O', 'O-O'];
 
 for (let i = 0; i < moves.length; i++) {
-  const start = convertChessNotationToXY(`${moves[i][0]}${moves[i][1]}`);
-  const end = convertChessNotationToXY(`${moves[i][2]}${moves[i][3]}`);
-  magnet.moveTo(start);
-  magnet.turnOn();
-  magnet.moveTo(end);
+  magnet.movePiece(moves[i]);
   magnet.goHome();
   console.log(magnet.instructions);
   magnet.resetInstructions();
