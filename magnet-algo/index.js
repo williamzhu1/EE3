@@ -48,7 +48,11 @@ class Magnet {
     const from = Magnet.convertChessNotationToXY(fromRaw);
     const to = Magnet.convertChessNotationToXY(toRaw);
     const piece = this._chess.get(fromRaw);
-    this._chess.move({ from: fromRaw, to: toRaw });
+    const move = this._chess.move({ from: fromRaw, to: toRaw });
+
+    if (move.captured) {
+      this.removePiece(to);
+    }
 
     if (piece.type === 'n') {
       return this.moveKnight(from, to);
@@ -167,6 +171,37 @@ class Magnet {
     }
   }
 
+  removePiece(position) {
+    this.moveTo(position);
+    this.turnOn();
+    const targetPosition = { x: 3.5, y: 3.5 };
+
+    let dx = targetPosition.x - position.x;
+    let dy = targetPosition.y - position.y;
+
+    const offsetDirection = (
+                              (dx > 0 && dy > 0) ? DIRECTIONS.NE :
+                              (dx > 0 && dy < 0) ? DIRECTIONS.SE :
+                              (dx < 0 && dy > 0) ? DIRECTIONS.NW :
+                              DIRECTIONS.SW
+                            );
+
+    this._instructions.push(`${offsetDirection} 0.5`);
+
+    dx = (dx > 0) ? dx - 0.5 : dx + 0.5;
+    dy = (dy > 0) ? dy - 0.5 : dy + 0.5;
+
+    const directionX = dx > 0 ? DIRECTIONS.E : DIRECTIONS.W;
+    const directionY = dy > 0 ? DIRECTIONS.N : DIRECTIONS.S;
+
+    this._instructions.push(`${directionX} ${Math.abs(dx)}`);
+    this._instructions.push(`${directionY} ${Math.abs(dy)}`);
+
+    this._position.x = targetPosition.x;
+    this._position.y = targetPosition.y;
+    this.turnOff();
+  }
+
   moveTo(position) {
     const dx = position.x - this._position.x;
     const dy = position.y - this._position.y;
@@ -212,6 +247,9 @@ const moves = ['e2e4', 'e7e5', 'f1c4', 'f8c5', 'g1h3', 'g8f6', 'O-O', 'O-O'];
 for (let i = 0; i < moves.length; i++) {
   magnet.movePiece(moves[i]);
   magnet.goHome();
-  console.log(magnet.instructions);
+  // console.log(magnet.instructions);
   magnet.resetInstructions();
 }
+magnet.movePiece('c4f7');
+magnet.goHome();
+console.log(magnet.instructions);

@@ -9,7 +9,7 @@ export const App = () => {
   const [isUsersTurn, setIsUsersTurn] = useState(false)
 
   return (
-    <> 
+    <>
       {!gameId && <CreateGame setGameId={setGameId} />}
       {gameId && <StreamGame setIsUsersTurn={setIsUsersTurn} gameId={gameId} />}
       {gameId && <MakeMove gameId={gameId} isUsersTurn={isUsersTurn} />}
