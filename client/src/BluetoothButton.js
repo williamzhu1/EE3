@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 
 export const characteristic = true;
 
-export const BluetoothButton = () => {
+export const BluetoothButton = ({ magnet }) => {
   const [logMessage, setLogMessage] = useState('');
 
   const log = (message) => {
     setLogMessage((prevLog) => prevLog + '\n' + message);
   };
-  
+
   const handleChange = (event) => {
     let change = event.target.value;
     log('> Characteristics changed:  ' + change);
@@ -38,7 +38,9 @@ export const BluetoothButton = () => {
         await characteristic.startNotifications();
         log('> Notifycation started');
         log('> Writing');
-        await characteristic.writeValueWithResponse(encoder.encode("MAGNET 1-MOVE N 2-MOVE S 2"));
+        // await characteristic.writeValueWithResponse(encoder.encode("MAGNET 1-MOVE N 2-MOVE S 2"));
+        console.log(magnet.instructions.join(' '))
+        await characteristic.writeValueWithResponse(encoder.encode(magnet.instructions.join(' ')));
       } catch(error) {
         log('Argh! ' + error);
       }
@@ -46,7 +48,7 @@ export const BluetoothButton = () => {
       log('Argh! ' + error);
     }
   };
-  
+
   const doMove = async () => {
     let encoder = new TextEncoder('Uint8');
     try {
