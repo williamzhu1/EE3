@@ -14,7 +14,7 @@ const findLastBotMove = (moves, color) => {
   return null
 }
 
-export const StreamGame = ({ gameId, setIsUsersTurn }) => {
+export const StreamGame = ({ gameId, setIsUsersTurn, magnet }) => {
   const [botColor, setBotColor] = useState('')
   const [lastBotMove, setLastBotMove] = useState('N/A')
   const [winner, setWinner] = useState('N/A')
@@ -33,6 +33,7 @@ export const StreamGame = ({ gameId, setIsUsersTurn }) => {
 
           if (botColor === 'white') {
             setLastBotMove(data.state.moves)
+            magnet.makeMove(data.state.moves)
             setIsUsersTurn(data.state.moves)
           } else {
             setIsUsersTurn(true)
@@ -43,6 +44,7 @@ export const StreamGame = ({ gameId, setIsUsersTurn }) => {
           const movesRaw = data.moves
           const moves = movesRaw === '' ? [] : movesRaw.split(' ')
           setLastBotMove(findLastBotMove(moves, botColor))
+          magnet.makeMove(findLastBotMove(moves, botColor))
           const isBotTurn =
             (botColor === 'white' && moves.length % 2 === 0) ||
             (botColor === 'black' && moves.length % 2 !== 0)
@@ -51,7 +53,7 @@ export const StreamGame = ({ gameId, setIsUsersTurn }) => {
           setWinner(data?.winner || 'N/A')
         }
       })
-  }, [botColor, gameId, setIsUsersTurn])
+  }, [botColor, gameId, magnet, setIsUsersTurn])
 
   return (
     <div>
