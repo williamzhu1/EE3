@@ -1,14 +1,14 @@
 const { Chess } = require('chess.js')
 
 const DIRECTIONS = {
-  N: 'NORTH',
-  S: 'SOUTH',
-  W: 'WEST',
-  E: 'EAST',
-  NW: 'NORTHWEST',
-  NE: 'NORTHEAST',
-  SW: 'SOUTHWEST',
-  SE: 'SOUTHEAST',
+  N: '008',
+  S: '009',
+  W: '00A',
+  E: '00B',
+  NW: '00C',
+  NE: '00D',
+  SW: '00E',
+  SE: '00F',
 }
 
 export class Magnet {
@@ -17,7 +17,7 @@ export class Magnet {
       x: 0,
       y: 0,
     }
-    this._instructions = ['MAGNET OFF']
+    this._instructions = ['0100']
     this._isOn = false
     this._chess = new Chess()
   }
@@ -36,7 +36,7 @@ export class Magnet {
   }
 
   resetInstructions() {
-    this._instructions = ['MAGNET OFF']
+    this._instructions = ['0100']
   }
 
   makeMove(notation) {
@@ -106,7 +106,7 @@ export class Magnet {
             ? DIRECTIONS.NW
             : DIRECTIONS.SW
 
-    this._instructions.push(`${offsetDirection} 0.5`)
+    this._instructions.push(`${offsetDirection}1`)
 
     dx = dx > 0 ? dx - 0.5 : dx + 0.5
     dy = dy > 0 ? dy - 0.5 : dy + 0.5
@@ -115,11 +115,11 @@ export class Magnet {
     const directionY = dy > 0 ? DIRECTIONS.N : DIRECTIONS.S
 
     if (Math.abs(dx) < 1) {
-      this._instructions.push(`${directionY} 1`)
+      this._instructions.push(`${directionY}2`)
     } else {
-      this._instructions.push(`${directionX} 1`)
+      this._instructions.push(`${directionX}2`)
     }
-    this._instructions.push(`${offsetDirection} 0.5`)
+    this._instructions.push(`${offsetDirection}1`)
 
     this.turnOff()
 
@@ -137,44 +137,44 @@ export class Magnet {
       this.moveTo(whiteRookPos)
       this.turnOn()
       if (notation === 'O-O') {
-        this._instructions.push(`${DIRECTIONS.W} 2`)
+        this._instructions.push(`${DIRECTIONS.W}4`)
         this.turnOff()
-        this._instructions.push(`${DIRECTIONS.W} 1`)
+        this._instructions.push(`${DIRECTIONS.W}2`)
         this.turnOn()
-        this._instructions.push(`${DIRECTIONS.NE} 0.5`)
-        this._instructions.push(`${DIRECTIONS.E} 1`)
-        this._instructions.push(`${DIRECTIONS.SE} 0.5`)
+        this._instructions.push(`${DIRECTIONS.NE}1`)
+        this._instructions.push(`${DIRECTIONS.E}2`)
+        this._instructions.push(`${DIRECTIONS.SE}1`)
         this.turnOff()
       } else {
-        this._instructions.push(`${DIRECTIONS.E} 3`)
+        this._instructions.push(`${DIRECTIONS.E}6`)
         this.turnOff()
-        this._instructions.push(`${DIRECTIONS.E} 1`)
+        this._instructions.push(`${DIRECTIONS.E}2`)
         this.turnOn()
-        this._instructions.push(`${DIRECTIONS.NW} 0.5`)
-        this._instructions.push(`${DIRECTIONS.W} 1`)
-        this._instructions.push(`${DIRECTIONS.SW} 0.5`)
+        this._instructions.push(`${DIRECTIONS.NW}1`)
+        this._instructions.push(`${DIRECTIONS.W}2`)
+        this._instructions.push(`${DIRECTIONS.SW}1`)
         this.turnOff()
       }
     } else {
       this.moveTo(blackRookPos)
       this.turnOn()
       if (notation === 'O-O') {
-        this._instructions.push(`${DIRECTIONS.W} 2`)
+        this._instructions.push(`${DIRECTIONS.W}4`)
         this.turnOff()
-        this._instructions.push(`${DIRECTIONS.W} 1`)
+        this._instructions.push(`${DIRECTIONS.W}2`)
         this.turnOn()
-        this._instructions.push(`${DIRECTIONS.SE} 0.5`)
-        this._instructions.push(`${DIRECTIONS.E} 1`)
-        this._instructions.push(`${DIRECTIONS.NE} 0.5`)
+        this._instructions.push(`${DIRECTIONS.SE}1`)
+        this._instructions.push(`${DIRECTIONS.E}2`)
+        this._instructions.push(`${DIRECTIONS.NE}1`)
         this.turnOff()
       } else {
-        this._instructions.push(`${DIRECTIONS.E} 3`)
+        this._instructions.push(`${DIRECTIONS.E}6`)
         this.turnOff()
-        this._instructions.push(`${DIRECTIONS.E} 1`)
+        this._instructions.push(`${DIRECTIONS.E}2`)
         this.turnOn()
-        this._instructions.push(`${DIRECTIONS.SW} 0.5`)
-        this._instructions.push(`${DIRECTIONS.W} 1`)
-        this._instructions.push(`${DIRECTIONS.NW} 0.5`)
+        this._instructions.push(`${DIRECTIONS.SW}1`)
+        this._instructions.push(`${DIRECTIONS.W}2`)
+        this._instructions.push(`${DIRECTIONS.NW}1`)
         this.turnOff()
       }
     }
@@ -197,7 +197,7 @@ export class Magnet {
             ? DIRECTIONS.NW
             : DIRECTIONS.SW
 
-    this._instructions.push(`${offsetDirection} 0.5`)
+    this._instructions.push(`${offsetDirection}1`)
 
     dx = dx > 0 ? dx - 0.5 : dx + 0.5
     dy = dy > 0 ? dy - 0.5 : dy + 0.5
@@ -205,8 +205,8 @@ export class Magnet {
     const directionX = dx > 0 ? DIRECTIONS.E : DIRECTIONS.W
     const directionY = dy > 0 ? DIRECTIONS.N : DIRECTIONS.S
 
-    this._instructions.push(`${directionX} ${Math.abs(dx)}`)
-    this._instructions.push(`${directionY} ${Math.abs(dy)}`)
+    this._instructions.push(`${directionX}${Math.abs(dx)*2}`)
+    this._instructions.push(`${directionY}${Math.abs(dy)*2}`)
 
     this._position.x = targetPosition.x
     this._position.y = targetPosition.y
@@ -220,8 +220,8 @@ export class Magnet {
     const directionX = dx > 0 ? DIRECTIONS.E : DIRECTIONS.W
     const directionY = dy > 0 ? DIRECTIONS.N : DIRECTIONS.S
 
-    this._instructions.push(`${directionX} ${Math.abs(dx)}`)
-    this._instructions.push(`${directionY} ${Math.abs(dy)}`)
+    this._instructions.push(`${directionX}${Math.abs(dx)*2}`)
+    this._instructions.push(`${directionY}${Math.abs(dy)*2}`)
 
     this._position.x = position.x
     this._position.y = position.y
@@ -235,15 +235,15 @@ export class Magnet {
   }
 
   turnOn() {
-    this._instructions.push('MAGNET ON')
+    this._instructions.push('0140')
   }
 
   turnOff() {
-    this._instructions.push('MAGNET OFF')
+    this._instructions.push('0100')
   }
 
   goHome() {
-    this._instructions.push('HOME')
+    this._instructions.push('0180')
     this._position = {
       x: 0,
       y: 0,

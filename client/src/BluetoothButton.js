@@ -2,24 +2,30 @@ import React, { useState } from 'react';
 
 export const characteristic = true;
 
-export const BluetoothButton = ({ magnet }) => {
+export const BluetoothButton = () => {
   const [logMessage, setLogMessage] = useState('');
+  const [moveValue, setMoveValue] = useState('');
+  const [bluetoothCharacteristic, setBluetoothCharacteristic] = useState(null);
 
   const log = (message) => {
     setLogMessage((prevLog) => prevLog + '\n' + message);
   };
-
+  
   const handleChange = (event) => {
-    let change = event.target.value.getUint8(0);
+    let change = event.target.value.getUint64();
     log('> Characteristics changed:  ' + change);
   };
 
+  const handleMoveInputChange = (event) => {
+    setMoveValue(event.target.value);
+  };
+
+
   const requestBluetoothDevice = async () => {
     let options = {};
-    options.filters = [{services: [0x00FF]}];
     options.optionalServices = [0x00FF];
     //options.acceptAllDevices = true;
-    
+    options.filters = [{services: [0x0FF]}];
 
     try {
       log('Requesting Bluetooth Device...');
@@ -31,32 +37,41 @@ export const BluetoothButton = ({ magnet }) => {
       characteristic = await service.getCharacteristic(0xFF01);
       notifications = await service.getCharacteristic(0xFF02);
       notifications.addEventListener('characteristicvaluechanged', handleChange);
+      setBluetoothCharacteristic(characteristic);
       log('> Name:             ' + device.name);
       log('> Id:               ' + device.id);
       log('> Connected:        ' + device.gatt.connected);
-      log('> Characteristics     ' + notifications.value);
-      let encoder = new TextEncoder('utf-8');
+      log('> Characteristics     ' + characteristic.value);
+      //let encoder = new TextEncoder('utf-8');
       try {
         log('> Notifying');
         await notifications.startNotifications();
         log('> Notifycation started');
         log('> Writing');
-        await characteristic.writeValueWithResponse(encoder.encode("READ"));
-        //console.log(magnet.instructions.join(' '))
-        //await characteristic.writeValueWithResponse(encoder.encode(magnet.instructions.join(' ')));
+        var hex = '0x3FFFFFFFFFF'
+        var typedArray = new Uint8Array(hex.match(/[\da-f]{2}/gi).map(function (h) {
+          return parseInt(h, 16)
+        }))
+        //await characteristic.writeValueWithResponse(typedArray);
       } catch(error) {
-        log('Notifications! ' + error);
+        log('Argh! ' + error);
       }
     } catch (error) {
       log('Argh! ' + error);
     }
   };
-
+  
   const doMove = async () => {
-    let encoder = new TextEncoder('Uint8');
+    if (!bluetoothCharacteristic) {
+      log('Bluetooth characteristic not available');
+      return;
+    }
     try {
       log('> Writing');
-      await characteristic.writeValueWithResponse(encoder.encode("MAGNET 1"));
+      var typedArray = new Uint8Array(moveValue.match(/[\da-f]{2}/gi).map(function (h) {
+        return parseInt(h, 16)
+      }))
+      await bluetoothCharacteristic.writeValueWithResponse(typedArray);
     } catch(error) {
       log('Argh! ' + error);
     }
@@ -66,6 +81,7 @@ export const BluetoothButton = ({ magnet }) => {
     <div>
       <button onClick={requestBluetoothDevice}>Request Bluetooth Device</button>
       <pre>{logMessage}</pre>
+      <input type="text" value={moveValue} onChange={handleMoveInputChange} />
       <button onClick={doMove}>doMove</button>
     </div>
   )
