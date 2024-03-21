@@ -10,15 +10,16 @@ export const BluetoothButton = ({ magnet }) => {
   };
 
   const handleChange = (event) => {
-    let change = event.target.value;
+    let change = event.target.value.getUint8(0);
     log('> Characteristics changed:  ' + change);
   };
 
   const requestBluetoothDevice = async () => {
     let options = {};
+    options.filters = [{services: [0x00FF]}];
     options.optionalServices = [0x00FF];
     //options.acceptAllDevices = true;
-    options.filters = [{services: [0x00FF]}];
+    
 
     try {
       log('Requesting Bluetooth Device...');
@@ -26,23 +27,25 @@ export const BluetoothButton = ({ magnet }) => {
       const server = await device.gatt.connect();
       const service = await server.getPrimaryService(0x00FF);
       let characteristic;
+      let notifications;
       characteristic = await service.getCharacteristic(0xFF01);
-      characteristic.addEventListener('characteristicvaluechanged', handleChange);
+      notifications = await service.getCharacteristic(0xFF02);
+      notifications.addEventListener('characteristicvaluechanged', handleChange);
       log('> Name:             ' + device.name);
       log('> Id:               ' + device.id);
       log('> Connected:        ' + device.gatt.connected);
-      log('> Characteristics     ' + characteristic.value);
+      log('> Characteristics     ' + notifications.value);
       let encoder = new TextEncoder('utf-8');
       try {
         log('> Notifying');
-        await characteristic.startNotifications();
+        await notifications.startNotifications();
         log('> Notifycation started');
         log('> Writing');
-        // await characteristic.writeValueWithResponse(encoder.encode("MAGNET 1-MOVE N 2-MOVE S 2"));
-        console.log(magnet.instructions.join(' '))
-        await characteristic.writeValueWithResponse(encoder.encode(magnet.instructions.join(' ')));
+        await characteristic.writeValueWithResponse(encoder.encode("READ"));
+        //console.log(magnet.instructions.join(' '))
+        //await characteristic.writeValueWithResponse(encoder.encode(magnet.instructions.join(' ')));
       } catch(error) {
-        log('Argh! ' + error);
+        log('Notifications! ' + error);
       }
     } catch (error) {
       log('Argh! ' + error);
